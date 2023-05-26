@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    restart: always
+    environment:
+      - INFLUXDB_DB=influx
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=admin
+    networks:
+      - public
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=public"
+        - "traefik.http.routers.influxdb_influxdb.entrypoints=web"
+        - "traefik.http.routers.influxdb_influxdb.rule=Host(`influxdb.office.local`)"
+        - "traefik.http.routers.influxdb_influxdb.service=influxdb_influxdb"
+        - "traefik.http.services.influxdb_influxdb.loadbalancer.server.port=8086"
+
+networks:
+  public:
+    external: true
+
+volumes:
+  influxdb_data: {}
