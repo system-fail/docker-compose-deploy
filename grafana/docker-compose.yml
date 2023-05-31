@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  grafana:
+    image: grafana/grafana:latest-ubuntu
+    environment:
+      TZ: "Europe/Moscow"
+    networks:
+      - public  
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    volumes:
+      - grafana-data:/var/lib/grafana
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=public"
+        - "traefik.http.routers.grafana_grafana.entrypoints=web"
+        - "traefik.http.routers.grafana_grafana.rule=Host(`grafana.office.local`)"
+        - "traefik.http.routers.grafana_grafana.service=grafana_grafana"
+        - "traefik.http.services.grafana_grafana.loadbalancer.server.port=3000"
+      
+networks:
+  public:
+    external: true
+
+volumes:
+  grafana-data: {}
