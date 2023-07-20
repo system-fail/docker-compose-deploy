@@ -1,0 +1,17 @@
+version: '3.9'
+
+services:
+  telegraf-esxi1:
+    image: telegraf:latest
+    container_name: telegraf_esxi1
+    restart: unless-stopped
+    networks:
+      - public
+    environment:
+      INFLUX_TOKEN: "D37pKSxAckN_OoHVpPNFHOi5kIQGMi2wMVHsvKDnOLzUsCcNQR68UU_Fwjto-u4dkoIjGgQ140zKVLe4j3VysA=="
+    volumes:
+    - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+
+networks:
+  public:
+    external: true
