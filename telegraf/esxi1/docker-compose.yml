@@ -9,8 +9,15 @@ services:
       - public
     environment:
       INFLUX_TOKEN: "D37pKSxAckN_OoHVpPNFHOi5kIQGMi2wMVHsvKDnOLzUsCcNQR68UU_Fwjto-u4dkoIjGgQ140zKVLe4j3VysA=="
-    volumes:
-    - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+#    volumes:
+#      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    configs:
+      - source: telegraf_conf
+        target: /etc/telegraf/telegraf.conf
+
+configs:
+  telegraf_conf:
+    file: ./telegraf.conf
 
 networks:
   public:
