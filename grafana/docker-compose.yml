@@ -3,8 +3,8 @@ version: '3.9'
 services:
   grafana:
     image: grafana/grafana:latest-ubuntu
-    environment:
-      TZ: "Europe/Moscow"
+    env_file:
+      - ./grafana.env
     networks:
       - public  
     ports:
