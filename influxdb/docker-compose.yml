@@ -27,4 +27,4 @@ networks:
     external: true
 
 volumes:
-  influxdb_data: {}
+  influxdb_data:
