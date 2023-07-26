@@ -28,3 +28,4 @@ networks:
 
 volumes:
   influxdb_data:
+    external: true
