@@ -8,7 +8,7 @@ services:
     networks:
       - public
     environment:
-      INFLUX_TOKEN: "D37pKSxAckN_OoHVpPNFHOi5kIQGMi2wMVHsvKDnOLzUsCcNQR68UU_Fwjto-u4dkoIjGgQ140zKVLe4j3VysA=="
+      INFLUX_TOKEN: "cvO4-qVvTQYE7ysNHMLDFY87s7ERe-vASvdFRF9g7DZyXeQsYS0kyAWE6ZqmM043TpG1mORlwvxGsD2RD94IhQ=="
     configs:
       - source: telegraf_conf
         target: /etc/telegraf/telegraf.conf
