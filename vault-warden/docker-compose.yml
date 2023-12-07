@@ -17,8 +17,8 @@ services:
         - "traefik.enable=true"
         - "traefik.docker.network=public"
         - "traefik.http.routers.vaultwarden_vaultwarden.entrypoints=websecure"
-        - "traefik.http.routers.vaultwarden_vaultwarden.tls=true"
-        - "traefik.http.routers.vaultwarden_vaultwarden.rule=Host(`vaultwarden.office.local`)"
+        - "traefik.http.routers.vaultwarden_vaultwarden.rule=Host(`bitwarden-test.office.bugaevgardens.ru`)"
+        - "traefik.http.routers.vaultwarden_vaultwarden.tls.certresolver=le"
         - "traefik.http.routers.vaultwarden_vaultwarden.service=vaultwarden_vaultwarden"
         - "traefik.http.services.vaultwarden_vaultwarden.loadbalancer.server.port=80"
 
