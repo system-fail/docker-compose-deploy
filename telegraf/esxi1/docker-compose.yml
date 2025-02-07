@@ -7,10 +7,10 @@ services:
     networks:
       - public
     environment:
-      HOST_NAME: "esxi1"
+      HOST_NAME: "esxi2"
       INFLUX_TOKEN: "cvO4-qVvTQYE7ysNHMLDFY87s7ERe-vASvdFRF9g7DZyXeQsYS0kyAWE6ZqmM043TpG1mORlwvxGsD2RD94IhQ=="
-      ESXI_HOST: "https://172.16.1.11/sdk"
-      IPMI_HOST: "telegraf:66306494@lanplus(10.5.6.52)"
+      ESXI_HOST: "https://172.16.1.12/sdk"
+      IPMI_HOST: "telegraf:66306494@lanplus(172.16.1.156)"
     configs:
       - source: telegraf_conf
         target: /etc/telegraf/telegraf.conf
