@@ -1,0 +1,138 @@
+
+
+services:
+  postgres:
+    image: ${NEXTCLOUD_POSTGRES_IMAGE_TAG}
+    container_name: nextcloud_db
+    volumes:
+      - nextcloud-postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${NEXTCLOUD_DB_NAME}
+      POSTGRES_USER: ${NEXTCLOUD_DB_USER}
+      POSTGRES_PASSWORD: ${NEXTCLOUD_DB_PASSWORD}
+    networks:
+      - nextcloud
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "${NEXTCLOUD_DB_NAME}", "-U", "${NEXTCLOUD_DB_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  redis:
+    image: ${NEXTCLOUD_REDIS_IMAGE_TAG}
+    command: ["redis-server", "--requirepass", "$NEXTCLOUD_REDIS_PASSWORD"]
+    container_name: nextcloud_redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - nextcloud
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  nextcloud:
+    image: ${NEXTCLOUD_IMAGE_TAG}
+    container_name: nextcloud
+    volumes:
+      - nextcloud-html:/var/www/html
+      - nextcloud-data:/var/www/html/data
+      - nextcloud-config:/var/www/html/config #local configuration
+      - nextcloud-custom-apps:/var/www/html/custom_apps #installed / modified apps
+      - nextcloud-themes:/var/www/html/themes/ #theming/branding
+    environment:
+      TZ: Europe/Moscow
+      POSTGRES_HOST: postgres
+      DB_PORT: 5432
+      POSTGRES_DB: ${NEXTCLOUD_DB_NAME}
+      POSTGRES_USER: ${NEXTCLOUD_DB_USER}
+      POSTGRES_PASSWORD: ${NEXTCLOUD_DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_HOST_PORT: 6379
+      REDIS_HOST_PASSWORD: ${NEXTCLOUD_REDIS_PASSWORD}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USERNAME}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      NEXTCLOUD_TRUSTED_DOMAINS: ${NEXTCLOUD_HOSTNAME}
+      OVERWRITECLIURL: ${NEXTCLOUD_URL}
+      OVERWRITEPROTOCOL: https
+      OVERWRITEHOST: ${NEXTCLOUD_HOSTNAME}
+      TRUSTED_PROXIES: 172.16.0.0/12 192.168.0.0/16 10.0.0.0/8 fc00::/7 fe80::/10 2001:db8::/32
+    networks:
+      - nextcloud
+      - public
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.nextcloud.entrypoints=web"
+        - "traefik.http.routers.nextcloud.rule=Host(`nextcloud-test.office.bugaevgardens.ru`)"
+        - "traefik.http.middlewares.nextcloud-https-redirect.redirectscheme.scheme=https"
+        - "traefik.http.routers.nextcloud.middlewares=nextcloud-https-redirect"
+        - "traefik.http.routers.nextcloud-secure.entrypoints=websecure"
+        - "traefik.http.routers.nextcloud-secure.rule=Host(`nextcloud-test.office.bugaevgardens.ru`)"
+        - "traefik.http.routers.nextcloud-secure.tls=true"
+        - "traefik.http.routers.nextcloud-secure.tls.certresolver=le"
+        - "traefik.http.routers.nextcloud-secure.tls.domains[0].main=nextcloud-test.office.bugaevgardens.ru"
+        - "traefik.http.routers.nextcloud-secure.service=nextcloud_nextcloud"
+        - "traefik.http.services.nextcloud_nextcloud.loadbalancer.server.port=80"
+        - "traefik.docker.network=public"
+        - "traefik.http.routers.nextcloud.middlewares=nextcloud_redirectregex"
+        - "traefik.http.middlewares.nextcloud_redirectregex.redirectregex.permanent=true"
+        - "traefik.http.middlewares.nextcloud_redirectregex.redirectregex.regex=https://(.*)/.well-known/(?:card|cal)dav"
+        - "traefik.http.middlewares.nextcloud_redirectregex.redirectregex.replacement=https://$${1}/remote.php/dav"
+        - "traefik.http.routers.nextcloud-secure.middlewares=nextcloud_redirectregex@docker"
+        - "traefik.http.middlewares.nextcloud-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+        - "traefik.http.routers.nextcloud-secure.middlewares=nextcloud-headers@docker,nextcloud_redirectregex@docker"
+        - "traefik.http.routers.nextcloud.middlewares=redirect-to-https"
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+        - "traefik.http.middlewares.nextcloud-headers.headers.customRequestHeaders.X-Forwarded-Proto=https"
+        - "traefik.http.middlewares.nextcloud-headers.headers.forceSTSHeader=true"
+        - "traefik.http.middlewares.nextcloud-headers.headers.stsPreload=true"
+        - "traefik.http.middlewares.nextcloud-headers.headers.stsIncludeSubdomains=true"
+        - "traefik.http.middlewares.nextcloud-headers.headers.stsSeconds=15552000"
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      
+  nextcloud-cron:
+    image: ${NEXTCLOUD_IMAGE_TAG}
+    container_name: nextcloud_cron
+    entrypoint: /cron.sh
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - nextcloud-html:/var/www/html
+    networks:
+      - nextcloud
+
+
+networks:
+  nextcloud:
+    external: true
+  public:
+    external: true
+
+volumes:
+  nextcloud-postgres: {}
+  redis-data: {}
+  nextcloud-html: {}
+  nextcloud-data: {}
+  nextcloud-config: {}
+  nextcloud-custom-apps: {}
+  nextcloud-themes: {}
